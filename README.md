@@ -20,11 +20,11 @@ people have it installed anyways.
 
 ## Installation
 Dependencies:
-    - rustc 1.59.0-nightly (e012a191d 2022-01-06)
-    - dmenu
-    - gtk-launch (in gtk3) (optional: for desktop files)
+- rustc 1.59.0-nightly (e012a191d 2022-01-06)
+- dmenu (use the navhistory patch)
+- gtk-launch (in gtk3) (optional: for desktop files)
 Install dependencies using:
-```console
+```bash
 sudo pacman -S rustup dmenu gtk3
 rustup toolchain install nightly-2022-01-06
 ```
@@ -32,8 +32,11 @@ NOTE: `pacman` commands only work on Arch Linux, find the appropriate commands
 for your distro in your distro's documentation. Windows and Mac aren't
 supported, as DMenu doesn't work on those OS's.
 
+Use dmenu with the "navhistory" patch. If you don't know how to do this,
+use my dmenu repo: https://github.com/dtomvan/dmenu
+
 Install using:
-```console
+```bash
 git clone https://github.com/dtomvan/dmenu_drun
 cargo install --path dmenu_drun
 ```
@@ -46,7 +49,7 @@ By default, both desktop files and `$PATH` are enabled.
 
 # TODO
 Maybe in the future I will include these features:
-    - `-l [lang]` flag for localization.
+- `-l [lang]` flag for localization.
 
 # Localization
 Localization in desktop files works as follows:
