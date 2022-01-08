@@ -1,0 +1,17 @@
+[package]
+name = "dmenu_drun"
+description = "Wrapper around dmenu(1) to also display desktop files."
+authors = [ "Tom van Dijk <18gatenmaker6@gmail.com>" ]
+homepage = "https://github.com/dtomvan/dmenu/blob/master/dmenu_drun"
+repository = "https://github.com/dtomvan/dmenu_drun/"
+license = "MIT"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dirs = "4.0.0"
+fork = "0.1.18"
+itertools = "0.10.3"
+lazy_static = "1.4.0"
