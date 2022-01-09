@@ -1,4 +1,6 @@
 #![feature(option_result_contains)]
+#![feature(hash_drain_filter)]
+// This will only work on linux, we're using DMenu anyways.
 #![cfg(target_os = "linux")]
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -31,11 +33,10 @@ lazy_static::lazy_static! {
 
 type Result<T = ()> = core::result::Result<T, Box<dyn std::error::Error>>;
 
-// This will only work on linux, we're using DMenu anyways.
 fn main() -> Result {
     let args = std::env::args().collect_vec();
 
-    if args.contains(&String::from("--help")) {
+    if args.contains(&"--help".to_string()) {
         println!("Usage: dmenu_drun [--help] [-d] [-p]");
         println!("    -p        hide files in $PATH");
         println!("    -d        hide desktop files");
@@ -65,20 +66,25 @@ fn main() -> Result {
         .or_else(|_| File::create(&cache_path))
         .expect("Could not create cache file");
 
-    let cache = if rebuild_cache {
-        let mut cache = HashMap::default();
-        if !args.contains(&String::from("-p")) {
-            cache.extend(create_path_cache(&cache_file)?.0);
-        }
-        if !args.contains(&String::from("-d")) {
-            cache.extend(create_desktop_cache(&cache_file)?.0);
-        }
+    let mut cache = if rebuild_cache {
+        let mut cache = create_path_cache(&cache_file)?.0;
+        cache.extend(create_desktop_cache(&cache_file)?.0);
         cache
     } else {
         let mut cache_str = String::new();
         cache_file.read_to_string(&mut cache_str)?;
         Cache::from_str(&cache_str)?.0
     };
+
+    if args.contains(&"-p".to_string()) {
+        cache = cache.drain_filter(|k, v| k != v).collect();
+    }
+
+    if args.contains(&"-d".to_string()) {
+        cache = cache
+            .drain_filter(|_, v| !v.ends_with(".desktop"))
+            .collect();
+    }
 
     let histfile =
         PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".dmenu_drun_histfile");
@@ -100,23 +106,35 @@ fn main() -> Result {
     writeln!(dmenu_stdin, "{}", formatted)?;
 
     let result = dmenu.wait_with_output().expect("Could not wait for dmenu");
-    let output = String::from_utf8_lossy(&result.stdout).trim().trim_end_matches(".desktop").to_string();
+    let output = String::from_utf8_lossy(&result.stdout)
+        .trim()
+        .trim_end_matches(".desktop")
+        .to_string();
 
-    let entry = cache.get(&output).unwrap();
-    if &output == entry {
-        let _ = Command::new(entry)
-            .spawn()
-            .expect("Could not start target executable")
-            .wait();
-    } else {
-        // Gtk-launch spawns a child process, needs double-fork
-        if let Ok(Fork::Child) = daemon(false, false) {
-            let _ = Command::new("gtk-launch")
-                .arg(entry)
+    let entry = cache.get(&output);
+    if let Some(entry) = entry {
+        if &output == entry {
+            let _ = Command::new(entry)
                 .spawn()
                 .expect("Could not start target executable")
                 .wait();
+        } else {
+            // Gtk-launch spawns a child process, needs double-fork
+            if let Ok(Fork::Child) = daemon(true, true) {
+                let _ = Command::new("gtk-launch")
+                    .arg(entry)
+                    .spawn()
+                    .expect("Could not start target executable")
+                    .wait();
+            }
         }
+    } else {
+        let mut output = output.split_whitespace();
+        let _ = Command::new(output.next().unwrap())
+            .args(output.collect_vec())
+            .spawn()
+            .expect("Could not start target executable")
+            .wait();
     }
     std::process::exit(result.status.code().unwrap_or(-1));
 }
