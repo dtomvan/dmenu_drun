@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![feature(option_result_contains)]
 #![feature(hash_drain_filter)]
 // This will only work on linux, we're using DMenu anyways.
@@ -130,7 +131,7 @@ fn main() -> Result {
         }
     } else {
         let mut output = output.split_whitespace();
-        let _ = Command::new(output.next().unwrap())
+        let _ = Command::new(output.next().expect("Got empty output from dmenu"))
             .args(output.collect_vec())
             .spawn()
             .expect("Could not start target executable")
