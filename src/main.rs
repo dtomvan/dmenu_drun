@@ -5,6 +5,7 @@
 #![cfg(target_os = "linux")]
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
+use std::os::unix::prelude::ExitStatusExt;
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::{
@@ -20,9 +21,10 @@ use itertools::Itertools;
 lazy_static::lazy_static! {
     pub static ref DESKTOP_FOLDER: PathBuf = dirs::home_dir().unwrap().join("Desktop");
     pub static ref LOCAL_APPLICATIONS: PathBuf = dirs::data_local_dir().unwrap().join("applications");
-    pub static ref DESKTOP_DIRS: [PathBuf; 3] = [
+    pub static ref DESKTOP_DIRS: [PathBuf; 4] = [
         DESKTOP_FOLDER.to_path_buf(),
         PathBuf::from("/usr/share/applications"),
+        PathBuf::from("/usr/local/share/applications/"),
         LOCAL_APPLICATIONS.to_path_buf(),
     ];
     pub static ref PATH: String = std::env::var("PATH").unwrap_or_default();
@@ -227,7 +229,7 @@ fn create_path_cache(cache_file: &File) -> Result<Cache> {
             x.metadata()
                 .map(|meta| !meta.permissions().mode() & 0o111)
                 .contains(&0)
-                && x.metadata().map(|y| y.is_file()).unwrap_or_default()
+                && x.metadata().map(|y| y.is_file() || y.is_symlink()).unwrap_or_default()
         },
         |name, _| name,
     )
