@@ -116,14 +116,14 @@ fn main() -> Result {
 
     let entry = cache.get(&output);
     if let Some(entry) = entry {
-        if &output == entry {
-            let _ = Command::new(entry)
-                .spawn()
-                .expect("Could not start target executable")
-                .wait();
-        } else {
-            // Gtk-launch spawns a child process, needs double-fork
-            if let Ok(Fork::Child) = daemon(true, true) {
+        // NOTE: double-forking is always needed in order to disown the child
+        if let Ok(Fork::Child) = daemon(true, true) {
+            if &output == entry {
+                let _ = Command::new(entry)
+                    .spawn()
+                    .expect("Could not start target executable")
+                    .wait();
+            } else {
                 let _ = Command::new("gtk-launch")
                     .arg(entry)
                     .spawn()
@@ -229,7 +229,9 @@ fn create_path_cache(cache_file: &File) -> Result<Cache> {
             x.metadata()
                 .map(|meta| !meta.permissions().mode() & 0o111)
                 .contains(&0)
-                && x.metadata().map(|y| y.is_file() || y.is_symlink()).unwrap_or_default()
+                && x.metadata()
+                    .map(|y| y.is_file() || y.is_symlink())
+                    .unwrap_or_default()
         },
         |name, _| name,
     )
