@@ -5,7 +5,6 @@
 #![cfg(target_os = "linux")]
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::os::unix::prelude::ExitStatusExt;
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::{
@@ -115,9 +114,9 @@ fn main() -> Result {
         .to_string();
 
     let entry = cache.get(&output);
-    if let Some(entry) = entry {
-        // NOTE: double-forking is always needed in order to disown the child
-        if let Ok(Fork::Child) = daemon(true, true) {
+    // NOTE: double-forking is always needed in order to disown the child
+    if let Ok(Fork::Child) = daemon(true, true) {
+        if let Some(entry) = entry {
             if &output == entry {
                 let _ = Command::new(entry)
                     .spawn()
@@ -130,14 +129,14 @@ fn main() -> Result {
                     .expect("Could not start target executable")
                     .wait();
             }
+        } else {
+            // spawn parent shell, to support shell language
+            let _ = Command::new("bash")
+                .args(["-c".to_string(), output])
+                .spawn()
+                .expect("Could not start target executable")
+                .wait();
         }
-    } else {
-        let mut output = output.split_whitespace();
-        let _ = Command::new(output.next().expect("Got empty output from dmenu"))
-            .args(output.collect_vec())
-            .spawn()
-            .expect("Could not start target executable")
-            .wait();
     }
     std::process::exit(result.status.code().unwrap_or(-1));
 }
