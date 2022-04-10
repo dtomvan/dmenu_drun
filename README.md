@@ -12,11 +12,11 @@ That slowed the script down by a lot. It takes .5 seconds to load, which is not
 enough for me as a full-time rofi user to make the switch. Rofi is almost
 instantaneous, because of the caching it performs. `dmenu_path` also caches,
 which makes it start up very fast. I cannot use `stest` though, because I need a
-key-value storage (title -> desktop filename).
+key-value storage (title → desktop filename).
 
 ## Why use `gtk-launch`?
 There are some quirks in .desktop files, it's easier to shell out to gtk. Most
-people have it installed anyways.
+people have it installed anyway.
 
 ## Installation
 Dependencies:
@@ -30,7 +30,7 @@ rustup toolchain install nightly-2022-01-06
 ```
 NOTE: `pacman` commands only work on Arch Linux, find the appropriate commands
 for your distro in your distro's documentation. Windows and Mac aren't
-supported, as DMenu doesn't work on those OS's.
+supported, as DMenu doesn't work on those OSes.
 
 Use dmenu with the "navhistory" patch. If you don't know how to do this,
 use my dmenu repo: https://github.com/dtomvan/dmenu
